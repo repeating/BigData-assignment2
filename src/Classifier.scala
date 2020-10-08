@@ -35,4 +35,37 @@ object Classifier {
     bestModel
   }
 
+  def trainRandomForest(train: Dataset[Row]): RandomForestClassificationModel = {
+    val name = "RandomForestClassificationModel"
+    val rf = new RandomForestClassifier()
+      .setCacheNodeIds(true)
+
+    val paramGrid = new ParamGridBuilder()
+      .addGrid(rf.numTrees, Array(10, 20))
+      .addGrid(rf.maxDepth, Array(10, 20))
+      .build()
+
+    // Run cross-validation, and choose the best set of parameters.
+    val bestModel = cv
+      .setEstimator(rf)
+      .setEstimatorParamMaps(paramGrid)
+      .fit(train)
+      .bestModel.asInstanceOf[RandomForestClassificationModel]
+    bestModel.write.overwrite().save(name)
+    bestModel
+  }
+
+  def loadLogRegModel(): LogisticRegressionModel = {
+    var logRegModel: LogisticRegressionModel = null
+    val name = "LogisticRegressionModel"
+    try {
+      logRegModel = LogisticRegressionModel.load(name)
+    } catch {
+      case e: Exception => throw new Exception(e + "\nMust pre-train models first, set PRODUCTION = false");
+    }
+    logRegModel
+  }
+
+  
 }
+ 
